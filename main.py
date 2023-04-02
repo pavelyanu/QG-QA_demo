@@ -21,6 +21,7 @@ parser.add_argument('--qa_model_name', type=str, default='distilbert-base-cased-
 parser.add_argument('--qa_model_type', type=str, default='bert')
 parser.add_argument('--qg_model_path', type=str, default=None)
 parser.add_argument('--qa_model_path', type=str, default=None)
+parser.add_argument('--num_wrong_answers', type=int, default=2)
 parser.add_argument('--input', type=str, default='input.txt')
 parser.add_argument('--output', type=str, default='output.txt')
 
@@ -103,6 +104,7 @@ def is_yes_no_answer(answer):
 def pretty_print(input_text, question, correct_answer, wrong_answers):
     output = f'{question}\n'
     letters = 'abcdefghijklmnopqrstuvwxyz'.upper()
+    wrong_answers = [a for a in wrong_answers if a]
     choice_letters = letters[:len(wrong_answers) + 1]
     answers = [correct_answer] + wrong_answers
     np.random.shuffle(answers)
@@ -250,8 +252,10 @@ def main(args: argparse.Namespace, input_text=None):
         input_text = read_input(args.input)
     question = qg_model.generate_question(input_text)
     correct_answer = qa_model.generate_answer(question, input_text)
-    wrong_answers = qa_model.generate_wrong_answers(question, input_text, correct_answer, num=2)
-    write_output(pretty_print(input_text, question, correct_answer, wrong_answers), args.output)
+    wrong_answers = qa_model.generate_wrong_answers(question, input_text, correct_answer, num=args.num_wrong_answers, seed=args.seed)
+    output = pretty_print(input_text, question, correct_answer, wrong_answers)
+    write_output(output, args.output)
+    return output
 
 if __name__ == '__main__':
     args = parser.parse_args([] if "__file__" not in globals() else None)
